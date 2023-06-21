@@ -48,6 +48,6 @@ This repository contains three versions of image component analysis implemented 
    - The merged components are displayed on the input image using `addWeighted` function.
    - Press any key to close the image windows.
 
-Note: The `solution.py` file is the recommended working version for general use. The `run_with_cuda.py` version utilizes GPU acceleration but requires a CUDA-enabled environment to run properly. The `classic.py` version is a single-threaded solution without GPU acceleration.
+Note: The `solution.py` file is the recommended working version for general use. The `run_with_cuda.py` version utilizes GPU acceleration but requires a CUDA-enabled environment to run properly. The `classic.py` version is a single-threaded solution without GPU acceleration. Also please note, that I was not successfull in running of `run_with_cuda.py` cause of macOS system with M1, however the code, should be working on Linux/Windows.
 
 Please ensure that you have the necessary dependencies installed before running the code.
