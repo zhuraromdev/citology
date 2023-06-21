@@ -29,8 +29,30 @@ d_threshold = cuda.to_device(threshold)
 d_label_ids = cuda.device_array_like(d_threshold)
 d_values = cuda.device_array_like(d_threshold)
 d_centroid = cuda.device_array_like(d_threshold)
-totalLabels = cv2.cuda.connectedComponentsWithStats(
-    d_threshold, d_label_ids, d_values, d_centroid, 4, cv2.CV_32S)
+
+# Define the CUDA kernel to run connectedComponentsWithStats
+
+
+@cuda.jit
+def connected_components_with_stats_kernel(threshold, label_ids, values, centroid):
+    y, x = cuda.grid(2)
+    if y < threshold.shape[0] and x < threshold.shape[1]:
+        label_ids[y, x], _, values[y, x], centroid[y, x] = cv2.connectedComponentsWithStats(
+            threshold[y, x], connectivity=4, ltype=cv2.CV_32S)
+
+
+# Configure the CUDA grid and block dimensions
+threadsperblock = (16, 16)
+blockspergrid_x = (
+    d_threshold.shape[1] + threadsperblock[0] - 1) // threadsperblock[0]
+blockspergrid_y = (
+    d_threshold.shape[0] + threadsperblock[1] - 1) // threadsperblock[1]
+blockspergrid = (blockspergrid_x, blockspergrid_y)
+
+# Launch the kernel on the GPU
+connected_components_with_stats_kernel[blockspergrid, threadsperblock](
+    d_threshold, d_label_ids, d_values, d_centroid
+)
 
 # Copy the results back to the host
 label_ids = d_label_ids.copy_to_host()
@@ -41,7 +63,7 @@ centroid = d_centroid.copy_to_host()
 merged_components = np.zeros(img.shape, dtype="uint8")
 
 # Loop through each component
-for i in range(1, totalLabels):
+for i in range(1, np.max(label_ids) + 1):
     # Create a mask for the current component on GPU
     d_componentMask = (label_ids == i).astype("uint8") * 255
 
